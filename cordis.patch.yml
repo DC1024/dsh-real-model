@@ -1,4 +1,5 @@
 # dsh-real-model bundle patch: one host component exposing the real-model tool.
+# required: false so a plugin failure degrades to "entry inactive" instead of blocking harness startup.
 - insert:
     - id: dsh-real-model
       name: dsh-real-model
