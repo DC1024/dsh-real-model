@@ -1,0 +1,6 @@
+# dsh-real-model bundle patch: one host component exposing the real-model tool.
+- insert:
+    - id: dsh-real-model
+      name: dsh-real-model
+      config:
+        required: false
