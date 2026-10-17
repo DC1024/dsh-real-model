@@ -1,134 +1,274 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dsh-real-model · 看清每条回复背后的真实模型</title>
-  <meta name="description" content="一个 DSH 插件，在每轮 AI 回复尾部显示真正提供服务的上游模型（如 deepseek-v4.1-flash），而不是界面上的路由组标签 group/smart-split。" />
-  <link rel="stylesheet" href="./style.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>⚙️</text></svg>" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dsh-real-model // 还原每条回复的真实模型</title>
+<meta name="description" content="DSH 插件：在每轮回复尾部标出真正提供服务的上游模型（如 deepseek-v4.1-flash），而不是界面上的路由组标签 group/smart-split。" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230a0f18'/><text x='16' y='23' font-size='18' text-anchor='middle' fill='%2322d3ee'>⚙</text></svg>" />
+<link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="bg-grid" aria-hidden="true"></div>
+<canvas id="mesh" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <div class="brand">⚙️ dsh-real-model</div>
-    <nav>
-      <a href="#features">功能</a>
-      <a href="#how">原理</a>
-      <a href="#install">安装</a>
-      <a href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">GitHub</a>
-    </nav>
-  </header>
+<header class="nav">
+  <a class="nav-brand" href="#top">
+    <span class="nav-logo">⚙</span>
+    <span class="nav-name">dsh<span class="dim">-</span>real<span class="dim">-</span>model</span>
+  </a>
+  <nav class="nav-links">
+    <a href="#capability">功能</a>
+    <a href="#architecture">架构</a>
+    <a href="#install">安装</a>
+  </nav>
+  <a class="nav-cta" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">
+    <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</header>
 
-  <main>
-    <section class="hero">
-      <p class="eyebrow">DeepSeek Harness 插件</p>
-      <h1>看清每条回复<br />背后<strong>真实</strong>的模型</h1>
-      <p class="lede">
-        DSH 的界面只显示路由组标签 <code>group/smart-split</code>——那不是真正干活的模型。
-        <strong>dsh-real-model</strong> 会在每轮回复的尾部，标出供应商实际服务的上游模型。
-      </p>
+<main id="top">
 
-      <div class="demo">
-        <div class="demo-row">
-          <div class="bubble">帮我写一个快速排序</div>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="hero-tag" data-reveal>
+      <span class="pulse"></span>
+      DEEPSEEK HARNESS · PLUGIN
+    </div>
+
+    <h1 class="hero-title" data-reveal>
+      <span class="line">界面写着 <code>group/smart-split</code></span>
+      <span class="line glow">真实模型却是别人</span>
+    </h1>
+
+    <p class="hero-sub" data-reveal>
+      一个 DSH 插件，解析会话日志，把每条回复<strong>真正干活的模型</strong>
+      标在轮次尾部——不再被路由组名糊弄。
+    </p>
+
+    <div class="hero-actions" data-reveal>
+      <a class="btn btn-primary" href="#install">开始安装</a>
+      <a class="btn btn-ghost" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">阅读源码</a>
+    </div>
+
+    <!-- terminal demo -->
+    <div class="terminal" data-reveal>
+      <div class="terminal-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title">dsh — conversation</span>
+      </div>
+      <div class="terminal-body">
+        <div class="msg user">
+          <span class="who">YOU</span>
+          <p>帮我总结一下这个项目的架构</p>
         </div>
-        <div class="demo-row assistant">
-          <div class="bubble">
-            好的，这是 Python 快速排序的实现……
-            <div class="tail">
-              <span class="chip" title="真实模型：deepseek/deepseek-v4.1-flash">⚙ deepseek-v4.1-flash</span>
-            </div>
+        <div class="msg bot">
+          <span class="who">DSH</span>
+          <p>该项目分为 host 与 client 两半，host 负责解析日志并暴露路由……</p>
+          <div class="chip-row">
+            <span class="chip">
+              <span class="chip-icon">⚙</span>
+              <span class="chip-model" id="chipA">deepseek-v4.1-flash</span>
+              <span class="chip-badge">REAL</span>
+            </span>
+            <span class="chip-note">↑ 供应商实际服务的模型</span>
           </div>
         </div>
-        <div class="demo-row">
-          <div class="bubble">用中文解释一下闭包</div>
+        <div class="msg user">
+          <span class="who">YOU</span>
+          <p>换个话题，解释一下闭包</p>
         </div>
-        <div class="demo-row assistant">
-          <div class="bubble">
-            闭包是指函数捕获了其词法作用域……
-            <div class="tail">
-              <span class="chip alt" title="真实模型：glm-5.3-flash">⚙ glm-5.3-flash</span>
-            </div>
+        <div class="msg bot">
+          <span class="who">DSH</span>
+          <p>闭包即函数与其词法作用域的组合……</p>
+          <div class="chip-row">
+            <span class="chip chip-alt">
+              <span class="chip-icon">⚙</span>
+              <span class="chip-model">glm-5.3-flash</span>
+              <span class="chip-badge">REAL</span>
+            </span>
+            <span class="chip-note">↑ 同一会话，不同轮次可能换模型</span>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="cta">
-        <a class="btn primary" href="#install">立即安装</a>
-        <a class="btn ghost" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">查看源码</a>
+    <div class="stats" data-reveal>
+      <div class="stat">
+        <span class="stat-num">01</span>
+        <span class="stat-label">PER-TURN<br />按轮次标注</span>
       </div>
-    </section>
-
-    <section id="features">
-      <h2>它能做什么</h2>
-      <div class="cards">
-        <article class="card">
-          <div class="card-icon">🏷️</div>
-          <h3>每轮模型徽标</h3>
-          <p>每条已完成的回复下方自动显示一个小标签，例如 <code>⚙ deepseek-v4.1-flash</code>、<code>⚙ glm-5.3-flash</code>。悬停可看详情。同一会话的不同轮次可能落在不同模型上，所以标签是<em>按轮次</em>显示的。</p>
-        </article>
-        <article class="card">
-          <div class="card-icon">🔧</div>
-          <h3>real_model 工具</h3>
-          <p>在对话里让 AI 调用 <code>real_model</code> 工具，即可查询任意会话每条回复的真实模型，并给出按模型聚合的计数。</p>
-        </article>
-        <article class="card">
-          <div class="card-icon">📜</div>
-          <h3>数据来自日志，不靠猜</h3>
-          <p>直接从会话日志 <code>session.vN.jsonl.zstd</code> 读取 <code>responseModel</code> 字段——这是供应商实际返回的模型，比界面顶层的路由组名可靠。</p>
-        </article>
+      <div class="stat">
+        <span class="stat-num">02</span>
+        <span class="stat-label">FROM LOGS<br />日志实读，非猜测</span>
       </div>
-    </section>
-
-    <section id="how">
-      <h2>它怎么工作</h2>
-      <div class="flow">
-        <div class="step">
-          <span class="num">1</span>
-          <p><strong>解析日志</strong>：Host 半逐帧解压会话的多帧 zstd 日志，提取每条 <code>assistant/message</code> 的真实模型。</p>
-        </div>
-        <div class="arrow">→</div>
-        <div class="step">
-          <span class="num">2</span>
-          <p><strong>提供接口</strong>：暴露 <code>/dsh-real-model/turn-model</code> 路由，按轮次多数投票得出该轮真实模型。</p>
-        </div>
-        <div class="arrow">→</div>
-        <div class="step">
-          <span class="num">3</span>
-          <p><strong>渲染徽标</strong>：Client 半挂载 <code>turnTail</code> 槽位，在每轮尾部画出模型芯片。</p>
-        </div>
+      <div class="stat">
+        <span class="stat-num">03</span>
+        <span class="stat-label">OPEN SOURCE<br />MIT 开源</span>
       </div>
-      <p class="note">界面上的 <code>group/smart-split</code> 只是 magpie 路由组的名字；真正的上游模型由日志里的 <code>responseModel</code> 字段记录，同一个会话里也可能在不同轮次/步骤间切换。</p>
-    </section>
+    </div>
+  </section>
 
-    <section id="install">
+  <!-- ================= CAPABILITY ================= -->
+  <section id="capability" class="section">
+    <div class="section-head" data-reveal>
+      <span class="kicker">// CAPABILITY</span>
+      <h2>能力矩阵</h2>
+      <p class="section-desc">三个入口，把「真实模型」这件事查清楚。</p>
+    </div>
+
+    <div class="grid-3">
+      <article class="panel" data-reveal>
+        <div class="panel-corner tl"></div><div class="panel-corner br"></div>
+        <div class="panel-icon">◈</div>
+        <h3>轮次徽标</h3>
+        <p>每条完成的回复尾部自动出现 <code>⚙ deepseek-v4.1-flash</code> 这样的芯片，悬停查看详情。按轮次渲染，因为同一会话可能在不同轮次切换上游。</p>
+      </article>
+
+      <article class="panel" data-reveal>
+        <div class="panel-corner tl"></div><div class="panel-corner br"></div>
+        <div class="panel-icon">⌘</div>
+        <h3>real_model 工具</h3>
+        <p>直接问 AI：「用 real_model 查一下这轮用的什么模型」。支持 <code>session</code> / <code>cwd</code> / <code>last</code> / <code>summaryOnly</code> 参数，返回按模型聚合的计数。</p>
+      </article>
+
+      <article class="panel" data-reveal>
+        <div class="panel-corner tl"></div><div class="panel-corner br"></div>
+        <div class="panel-icon">▤</div>
+        <h3>日志直读</h3>
+        <p>数据源是 <code>session.vN.jsonl.zstd</code> 里的 <code>responseModel</code> 字段——供应商真正返回的模型名，比界面顶层的路由组标签可靠得多。</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= ARCHITECTURE ================= -->
+  <section id="architecture" class="section">
+    <div class="section-head" data-reveal>
+      <span class="kicker">// ARCHITECTURE</span>
+      <h2>数据链路</h2>
+      <p class="section-desc">从一条日志，到你眼前的那枚芯片。</p>
+    </div>
+
+    <div class="diagram" data-reveal>
+      <svg viewBox="0 0 900 260" role="img" aria-label="数据链路：会话日志 → host 半 → 路由 → client 半 → 徽标">
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#22d3ee" />
+            <stop offset="100%" stop-color="#7c5cff" />
+          </linearGradient>
+          <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        <!-- connectors -->
+        <line class="wire" x1="170" y1="130" x2="270" y2="130" />
+        <line class="wire" x1="450" y1="130" x2="550" y2="130" />
+        <line class="wire" x1="730" y1="130" x2="800" y2="130" />
+        <circle class="pulse-dot" r="3.5" fill="#22d3ee">
+          <animateMotion dur="2.4s" repeatCount="indefinite" path="M170,130 L270,130" />
+        </circle>
+        <circle class="pulse-dot" r="3.5" fill="#7c5cff">
+          <animateMotion dur="2.4s" repeatCount="indefinite" path="M450,130 L550,130" />
+        </circle>
+        <circle class="pulse-dot" r="3.5" fill="#34d399">
+          <animateMotion dur="2.4s" repeatCount="indefinite" path="M730,130 L800,130" />
+        </circle>
+
+        <!-- nodes -->
+        <g class="node">
+          <rect x="20" y="90" width="150" height="80" rx="10" />
+          <text x="95" y="122">session.vN</text>
+          <text x="95" y="144" class="mono-sm">.jsonl.zstd</text>
+        </g>
+        <g class="node">
+          <rect x="270" y="90" width="180" height="80" rx="10" />
+          <text x="360" y="122">HOST 半</text>
+          <text x="360" y="144" class="mono-sm">解析 · 路由 · 工具</text>
+        </g>
+        <g class="node">
+          <rect x="550" y="90" width="180" height="80" rx="10" />
+          <text x="640" y="122">CLIENT 半</text>
+          <text x="640" y="144" class="mono-sm">turnTail 槽位</text>
+        </g>
+        <g class="node node-accent">
+          <rect x="800" y="98" width="80" height="64" rx="10" />
+          <text x="840" y="135" fill="#22d3ee">⚙ 芯片</text>
+        </g>
+      </svg>
+
+      <ul class="diagram-list">
+        <li><span class="idx">01</span><strong>逐帧解压</strong>：多帧 zstd 需顺序扫描 <code>0x184D2A50</code>（skippable）与 <code>0xFD2FB528</code>（数据帧）。</li>
+        <li><span class="idx">02</span><strong>多数投票</strong>：一轮可能有多步，按该轮各步的真实模型投票得出代表值。</li>
+        <li><span class="idx">03</span><strong>精确路由</strong>：<code>GET /dsh-real-model/turn-model?turn=N&amp;session=&lt;id&gt;</code>（DSH 只支持 exact 路由）。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= INSTALL ================= -->
+  <section id="install" class="section">
+    <div class="section-head" data-reveal>
+      <span class="kicker">// DEPLOY</span>
       <h2>安装</h2>
-      <div class="install">
-        <div class="step-block">
-          <h3>① 打包</h3>
-          <pre><code>pnpm pack</code></pre>
+      <p class="section-desc">两步上线，重启后生效。</p>
+    </div>
+
+    <div class="install-grid">
+      <div class="panel panel-term" data-reveal>
+        <div class="panel-corner tl"></div><div class="panel-corner br"></div>
+        <h3><span class="step-no">01</span> 打包</h3>
+        <div class="codeblock">
+          <code id="packCmd">pnpm pack</code>
+          <button class="copy" data-copy="#packCmd" type="button" aria-label="复制命令">COPY</button>
         </div>
-        <div class="step-block">
-          <h3>② 安装并重启</h3>
-          <p>在 DSH 中：<strong>设置 → 插件</strong> → 安装生成的 tarball（或让 AI 执行 <code>plugin_manager install_bundle &lt;tarball&gt;</code>），然后重启 DSH。</p>
-          <div class="callout">升级版本时务必升版本号：DSH 按 generation 路径缓存已加载的 ESM，同版本重装不会生效。</div>
-        </div>
+        <p class="hint">在插件源码目录执行，得到 <code>.tgz</code>。</p>
       </div>
-    </section>
 
-    <section class="closing">
-      <h2>开源 · MIT</h2>
-      <p>源码、文档与构建说明均在 GitHub 公开：</p>
-      <a class="btn primary" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">github.com/DC1024/dsh-real-model</a>
-    </section>
-  </main>
+      <div class="panel panel-term" data-reveal>
+        <div class="panel-corner tl"></div><div class="panel-corner br"></div>
+        <h3><span class="step-no">02</span> 安装并重启</h3>
+        <div class="codeblock">
+          <code id="installCmd">plugin_manager install_bundle &lt;tarball&gt;</code>
+          <button class="copy" data-copy="#installCmd" type="button" aria-label="复制命令">COPY</button>
+        </div>
+        <p class="hint">也可在 <strong>设置 → 插件</strong> 中安装 tarball，然后重启 DSH。</p>
+      </div>
+    </div>
 
-  <footer>
-    <p>dsh-real-model · 用 ⚙ 看清真实模型 · 与 DeepSeek Harness 配套</p>
-  </footer>
+    <div class="warn" data-reveal>
+      <span class="warn-icon">!</span>
+      <div>
+        <strong>升级必须升版本号。</strong>
+        DSH 按 generation 路径缓存已加载的 ESM，同版本重装不会生效——改了代码记得改 <code>package.json</code> 的 version。
+      </div>
+    </div>
+  </section>
 
-  <script src="./script.js"></script>
+  <!-- ================= CTA ================= -->
+  <section class="closing">
+    <div class="closing-inner" data-reveal>
+      <span class="kicker">// OPEN SOURCE</span>
+      <h2>不再被路由组名糊弄</h2>
+      <p>源码、中文文档与构建说明全部公开，MIT 许可。</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">前往 GitHub</a>
+        <a class="btn btn-ghost" href="https://github.com/DC1024/dsh-real-model#readme" target="_blank" rel="noopener">中文 README</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <span>dsh-real-model</span>
+  <span class="dim">·</span>
+  <span>看清真实模型</span>
+  <span class="dim">·</span>
+  <span>MIT</span>
+</footer>
+
+<script src="./script.js"></script>
 </body>
 </html>
