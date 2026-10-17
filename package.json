@@ -1,38 +1,38 @@
 {
-    "name":  "dsh-real-model",
-    "version":  "0.2.1",
-    "description":  "DSH plugin: show and query the real upstream model behind each assistant reply (responseModel from session logs), not the routing-group label. Adds a turn-tail chip in the web UI plus the real_model tool.",
-    "type":  "module",
-    "main":  "lib/index.js",
-    "exports":  {
-                    ".":  "./lib/index.js",
-                    "./client":  "./lib/client.js",
-                    "./cordis.patch.yml":  "./cordis.patch.yml"
-                },
-    "keywords":  [
-                     "dsh",
-                     "dsh-plugin",
-                     "model",
-                     "responseModel"
-                 ],
-    "license":  "MIT",
-    "dsh":  {
-                "bundle":  {
-                               "patch":  "./cordis.patch.yml"
-                           },
-                "client":  {
-                               "platform":  "web",
-                               "inject":  [
-                                              "@deepseek-ai/dsh-client-ui-slots"
-                                          ]
-                           }
-            },
-    "peerDependencies":  {
-                             "@deepseek-ai/cordis":  "^4.0.4"
-                         },
-    "peerDependenciesMeta":  {
-                                 "@deepseek-ai/cordis":  {
-                                                             "optional":  true
-                                                         }
-                             }
+  "name": "dsh-real-model",
+  "version": "0.2.2",
+  "description": "DSH plugin: show and query the real upstream model behind each assistant reply (responseModel from session logs), not the routing-group label. Adds a turn-tail chip in the web UI plus the real_model tool.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "model",
+    "responseModel"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.4"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  }
 }
