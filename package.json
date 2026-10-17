@@ -1,6 +1,6 @@
 {
   "name": "dsh-real-model",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "DSH plugin: show and query the real upstream model behind each assistant reply (responseModel from session logs), not the routing-group label. Adds a turn-tail chip in the web UI plus the real_model tool.",
   "type": "module",
   "main": "lib/index.js",
