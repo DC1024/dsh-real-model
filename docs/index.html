@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dsh-real-model · 看清每条回复背后的真实模型</title>
+  <meta name="description" content="一个 DSH 插件，在每轮 AI 回复尾部显示真正提供服务的上游模型（如 deepseek-v4.1-flash），而不是界面上的路由组标签 group/smart-split。" />
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>⚙️</text></svg>" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">⚙️ dsh-real-model</div>
+    <nav>
+      <a href="#features">功能</a>
+      <a href="#how">原理</a>
+      <a href="#install">安装</a>
+      <a href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">DeepSeek Harness 插件</p>
+      <h1>看清每条回复<br />背后<strong>真实</strong>的模型</h1>
+      <p class="lede">
+        DSH 的界面只显示路由组标签 <code>group/smart-split</code>——那不是真正干活的模型。
+        <strong>dsh-real-model</strong> 会在每轮回复的尾部，标出供应商实际服务的上游模型。
+      </p>
+
+      <div class="demo">
+        <div class="demo-row">
+          <div class="bubble">帮我写一个快速排序</div>
+        </div>
+        <div class="demo-row assistant">
+          <div class="bubble">
+            好的，这是 Python 快速排序的实现……
+            <div class="tail">
+              <span class="chip" title="真实模型：deepseek/deepseek-v4.1-flash">⚙ deepseek-v4.1-flash</span>
+            </div>
+          </div>
+        </div>
+        <div class="demo-row">
+          <div class="bubble">用中文解释一下闭包</div>
+        </div>
+        <div class="demo-row assistant">
+          <div class="bubble">
+            闭包是指函数捕获了其词法作用域……
+            <div class="tail">
+              <span class="chip alt" title="真实模型：glm-5.3-flash">⚙ glm-5.3-flash</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta">
+        <a class="btn primary" href="#install">立即安装</a>
+        <a class="btn ghost" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">查看源码</a>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2>它能做什么</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="card-icon">🏷️</div>
+          <h3>每轮模型徽标</h3>
+          <p>每条已完成的回复下方自动显示一个小标签，例如 <code>⚙ deepseek-v4.1-flash</code>、<code>⚙ glm-5.3-flash</code>。悬停可看详情。同一会话的不同轮次可能落在不同模型上，所以标签是<em>按轮次</em>显示的。</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">🔧</div>
+          <h3>real_model 工具</h3>
+          <p>在对话里让 AI 调用 <code>real_model</code> 工具，即可查询任意会话每条回复的真实模型，并给出按模型聚合的计数。</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">📜</div>
+          <h3>数据来自日志，不靠猜</h3>
+          <p>直接从会话日志 <code>session.vN.jsonl.zstd</code> 读取 <code>responseModel</code> 字段——这是供应商实际返回的模型，比界面顶层的路由组名可靠。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="how">
+      <h2>它怎么工作</h2>
+      <div class="flow">
+        <div class="step">
+          <span class="num">1</span>
+          <p><strong>解析日志</strong>：Host 半逐帧解压会话的多帧 zstd 日志，提取每条 <code>assistant/message</code> 的真实模型。</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+          <span class="num">2</span>
+          <p><strong>提供接口</strong>：暴露 <code>/dsh-real-model/turn-model</code> 路由，按轮次多数投票得出该轮真实模型。</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+          <span class="num">3</span>
+          <p><strong>渲染徽标</strong>：Client 半挂载 <code>turnTail</code> 槽位，在每轮尾部画出模型芯片。</p>
+        </div>
+      </div>
+      <p class="note">界面上的 <code>group/smart-split</code> 只是 magpie 路由组的名字；真正的上游模型由日志里的 <code>responseModel</code> 字段记录，同一个会话里也可能在不同轮次/步骤间切换。</p>
+    </section>
+
+    <section id="install">
+      <h2>安装</h2>
+      <div class="install">
+        <div class="step-block">
+          <h3>① 打包</h3>
+          <pre><code>pnpm pack</code></pre>
+        </div>
+        <div class="step-block">
+          <h3>② 安装并重启</h3>
+          <p>在 DSH 中：<strong>设置 → 插件</strong> → 安装生成的 tarball（或让 AI 执行 <code>plugin_manager install_bundle &lt;tarball&gt;</code>），然后重启 DSH。</p>
+          <div class="callout">升级版本时务必升版本号：DSH 按 generation 路径缓存已加载的 ESM，同版本重装不会生效。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <h2>开源 · MIT</h2>
+      <p>源码、文档与构建说明均在 GitHub 公开：</p>
+      <a class="btn primary" href="https://github.com/DC1024/dsh-real-model" target="_blank" rel="noopener">github.com/DC1024/dsh-real-model</a>
+    </section>
+  </main>
+
+  <footer>
+    <p>dsh-real-model · 用 ⚙ 看清真实模型 · 与 DeepSeek Harness 配套</p>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>
